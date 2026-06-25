@@ -4,73 +4,118 @@ import "./_group.css";
 type Phase = "intro" | "descending" | "clicking" | "zoomed";
 
 export function Profile() {
-  const feedRef = useRef<HTMLDivElement>(null);
-  const firstPostRef = useRef<HTMLDivElement>(null);
+  const feedRef   = useRef<HTMLDivElement>(null);
+  const sceneRef  = useRef<HTMLDivElement>(null);
+  const rafRef    = useRef<number | null>(null);
   const [phase, setPhase] = useState<Phase>("intro");
   const [cursor, setCursor] = useState({ x: 185, y: 100, visible: false, clicking: false });
-  const animFrameRef = useRef<number | null>(null);
 
-  const ease = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  // Ease out expo — punchy start, smooth landing
+  const easeOutExpo = (t: number) =>
+    t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
 
+  // Ease in-out cubic for cursor/scroll
+  const easeInOut = (t: number) =>
+    t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+  /** JS-driven rAF zoom — bypasses CSS transition entirely */
+  const startZoom = () => {
+    if (!sceneRef.current) return;
+
+    // Starting state — must match what phase-descending CSS applies
+    const from = { persp: 1400, rx: 15, ry: -24, rz: 3, ty: 0,  sc: 0.85 };
+    // Target  — phone so large the post white-area fills the screen
+    const to   = { persp:  600, rx:  0, ry:   0, rz: 0, ty: 30, sc: 3.4  };
+
+    const duration = 2000; // ms
+    const start = performance.now();
+
+    // Remove ALL phase classes so CSS rules don't fight us
+    const el = sceneRef.current;
+    el.className = "phone-scene phase-zoom-js";
+
+    const tick = (now: number) => {
+      const raw = Math.min((now - start) / duration, 1);
+      const e   = easeOutExpo(raw);
+
+      const p  = lerp(from.persp, to.persp, e);
+      const rx = lerp(from.rx,    to.rx,    e);
+      const ry = lerp(from.ry,    to.ry,    e);
+      const rz = lerp(from.rz,    to.rz,    e);
+      const ty = lerp(from.ty,    to.ty,    e);
+      const sc = lerp(from.sc,    to.sc,    e);
+
+      el.style.transform =
+        `perspective(${p}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) translateY(${ty}px) scale(${sc})`;
+
+      if (raw < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        setPhase("zoomed"); // mark done (for post-card class)
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+  };
+
+  // Animate cursor position
   const animateCursor = (
     x1: number, y1: number, x2: number, y2: number,
     ms: number, onDone?: () => void
   ) => {
     const start = performance.now();
-    const tick = (now: number) => {
+    const tick  = (now: number) => {
       const t = Math.min((now - start) / ms, 1);
-      const e = ease(t);
+      const e = easeInOut(t);
       setCursor(c => ({ ...c, x: x1 + (x2 - x1) * e, y: y1 + (y2 - y1) * e }));
-      if (t < 1) animFrameRef.current = requestAnimationFrame(tick);
+      if (t < 1) rafRef.current = requestAnimationFrame(tick);
       else onDone?.();
     };
-    animFrameRef.current = requestAnimationFrame(tick);
+    rafRef.current = requestAnimationFrame(tick);
   };
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
+    const q = (d: number, fn: () => void) => { timers.push(setTimeout(fn, d)); };
 
-    const q = (delay: number, fn: () => void) => { timers.push(setTimeout(fn, delay)); };
-
-    // 0.5s  → cursor appears
     q(500,  () => setCursor(c => ({ ...c, visible: true })));
 
-    // 0.8s  → scroll + cursor moves down
     q(800, () => {
       setPhase("descending");
 
-      // Scroll feed while cursor descends
+      // Scroll feed in sync with cursor descent
       const scrollStart = performance.now();
-      const scrollFeed = (now: number) => {
+      const scrollFeed  = (now: number) => {
         const t = Math.min((now - scrollStart) / 1900, 1);
-        if (feedRef.current) feedRef.current.scrollTop = ease(t) * 310;
+        if (feedRef.current) feedRef.current.scrollTop = easeInOut(t) * 310;
         if (t < 1) requestAnimationFrame(scrollFeed);
       };
       requestAnimationFrame(scrollFeed);
 
-      // Cursor descends from top area to post area
       animateCursor(185, 120, 185, 445, 1900, () => {
-        // 2.7s: arrived — slight hover pause then click
-        q(160, () => {
+        q(140, () => {
           setCursor(c => ({ ...c, clicking: true }));
           setPhase("clicking");
         });
-        q(480, () => {
-          setCursor(c => ({ ...c, clicking: false }));
-          setPhase("zoomed");
+        // Click settling → hand off to JS zoom
+        q(420, () => {
+          setCursor(c => ({ ...c, clicking: false, visible: false }));
+          startZoom();
         });
       });
     });
 
     return () => {
       timers.forEach(clearTimeout);
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, []);
 
   return (
     <div className="fb-root">
-      {/* Giant glowing cursor */}
+      {/* Cursor */}
       {cursor.visible && (
         <div
           className={`big-cursor ${cursor.clicking ? "cursor-click" : ""}`}
@@ -82,45 +127,34 @@ export function Profile() {
         </div>
       )}
 
-      {/* ── 3D Background ── */}
+      {/* 3D Background */}
       <div className="bg-scene">
         <div className="bg-far-grid" />
         <div className="bg-mid-grid" />
-        <div className="bg-orb o1" />
-        <div className="bg-orb o2" />
-        <div className="bg-orb o3" />
-        <div className="bg-orb o4" />
-        <div className="bg-streak s1" />
-        <div className="bg-streak s2" />
-        <div className="bg-streak s3" />
+        <div className="bg-orb o1" /><div className="bg-orb o2" />
+        <div className="bg-orb o3" /><div className="bg-orb o4" />
+        <div className="bg-streak s1" /><div className="bg-streak s2" /><div className="bg-streak s3" />
         <div className="bg-vignette" />
         <div className="bg-floor" />
       </div>
 
-      {/* ── Phone + 3D zoom scene ── */}
-      <div className={`phone-scene phase-${phase}`}>
+      {/* Phone — JS controls transform after click */}
+      <div className={`phone-scene phase-${phase}`} ref={sceneRef}>
         <div className="phone-shadow" />
         <div className="phone-frame">
           <div className="notch" />
 
-          {/* Status bar */}
           <div className="status-bar">
             <span className="s-time">9:41</span>
-            <div className="s-icons">
-              <SignalIcon /><WifiIcon /><span style={{fontSize:11}}>🔋</span>
-            </div>
+            <div className="s-icons"><SignalIcon /><WifiIcon /><span style={{fontSize:11}}>🔋</span></div>
           </div>
 
-          {/* Feed */}
           <div className="feed-scroll" ref={feedRef}>
-
-            {/* Cover */}
             <div className="cover-photo">
               <div className="cover-shimmer" />
               <div className="cover-gradient" />
             </div>
 
-            {/* Profile */}
             <div className="profile-section">
               <div className="avatar-wrap">
                 <div className="avatar-blank"><span className="avatar-icon">👤</span></div>
@@ -144,7 +178,6 @@ export function Profile() {
               </div>
             </div>
 
-            {/* Tabs */}
             <div className="profile-tabs">
               {["Posts","About","Friends","Photos","More"].map((t,i) => (
                 <div key={t} className={`tab ${i===0?"tab-on":""}`}>{t}</div>
@@ -154,10 +187,7 @@ export function Profile() {
             <div style={{ height:8, background:"#f0f2f5" }} />
 
             {/* ── FIRST POST ── */}
-            <div
-              ref={firstPostRef}
-              className={`post-card first-post ${phase==="zoomed" ? "post-full" : ""}`}
-            >
+            <div className={`post-card first-post ${phase==="zoomed" ? "post-full" : ""}`}>
               <div className="post-head">
                 <div className="post-av" />
                 <div style={{ flex:1, display:"flex", flexDirection:"column", gap:5 }}>
@@ -166,35 +196,28 @@ export function Profile() {
                 </div>
                 <span className="post-menu">•••</span>
               </div>
-
-              {/* ── THE WHITE POST AREA ── */}
               <div className="post-body">
                 <div className="blank-label">Your content here</div>
               </div>
-
               <div className="post-stats">
                 <div style={{ display:"flex", alignItems:"center", gap:3 }}>
                   {"👍❤️😮".split("").map((e,i) => <span key={i} style={{fontSize:14}}>{e}</span>)}
                   <Skel w={50} h={11} r={3} style={{ marginLeft:4 }} />
                 </div>
                 <div style={{ display:"flex", gap:10 }}>
-                  <Skel w={55} h={11} r={3} />
-                  <Skel w={45} h={11} r={3} delay={0.1} />
+                  <Skel w={55} h={11} r={3} /><Skel w={45} h={11} r={3} delay={0.1} />
                 </div>
               </div>
-
               <div className="post-actions">
                 {[["👍","Like"],["💬","Comment"],["↗","Share"]].map(([ic,lb]) => (
                   <div key={lb} className="action-btn">{ic} {lb}</div>
                 ))}
               </div>
-
               <div className="comment-sec">
                 <CommentRow wide />
                 <CommentRow />
                 <div className="cinput-row">
-                  <div className="self-av" />
-                  <div className="cinput">Write a comment…</div>
+                  <div className="self-av" /><div className="cinput">Write a comment…</div>
                 </div>
               </div>
             </div>
@@ -204,14 +227,11 @@ export function Profile() {
               <div className="post-head">
                 <div className="post-av" />
                 <div style={{ flex:1, display:"flex", flexDirection:"column", gap:5 }}>
-                  <Skel w={110} h={13} r={4} />
-                  <Skel w={70}  h={11} r={3} />
+                  <Skel w={110} h={13} r={4} /><Skel w={70} h={11} r={3} />
                 </div>
                 <span className="post-menu">•••</span>
               </div>
-              <div className="post-body tall">
-                <div className="blank-label">Your content here</div>
-              </div>
+              <div className="post-body tall"><div className="blank-label">Your content here</div></div>
               <div className="post-actions">
                 {[["👍","Like"],["💬","Comment"],["↗","Share"]].map(([ic,lb]) => (
                   <div key={lb} className="action-btn">{ic} {lb}</div>
@@ -220,8 +240,7 @@ export function Profile() {
               <div className="comment-sec">
                 <CommentRow />
                 <div className="cinput-row">
-                  <div className="self-av" />
-                  <div className="cinput">Write a comment…</div>
+                  <div className="self-av" /><div className="cinput">Write a comment…</div>
                 </div>
               </div>
             </div>
@@ -231,14 +250,11 @@ export function Profile() {
               <div className="post-head">
                 <div className="post-av" />
                 <div style={{ flex:1, display:"flex", flexDirection:"column", gap:5 }}>
-                  <Skel w={110} h={13} r={4} />
-                  <Skel w={70}  h={11} r={3} />
+                  <Skel w={110} h={13} r={4} /><Skel w={70} h={11} r={3} />
                 </div>
                 <span className="post-menu">•••</span>
               </div>
-              <div className="post-body">
-                <div className="blank-label">Your content here</div>
-              </div>
+              <div className="post-body"><div className="blank-label">Your content here</div></div>
               <div className="post-actions">
                 {[["👍","Like"],["💬","Comment"],["↗","Share"]].map(([ic,lb]) => (
                   <div key={lb} className="action-btn">{ic} {lb}</div>
@@ -246,16 +262,13 @@ export function Profile() {
               </div>
               <div className="comment-sec">
                 <div className="cinput-row">
-                  <div className="self-av" />
-                  <div className="cinput">Write a comment…</div>
+                  <div className="self-av" /><div className="cinput">Write a comment…</div>
                 </div>
               </div>
             </div>
-
             <div style={{ height:80 }} />
           </div>
 
-          {/* Bottom nav */}
           <div className="bottom-nav">
             {["🏠","🔍","▶","🛒","☰"].map((ic,i) => (
               <div key={i} className={`nav-btn ${i===0?"nb-on":""}`}>{ic}</div>
@@ -264,7 +277,7 @@ export function Profile() {
         </div>
       </div>
 
-      {/* White flash on zoom — pure satisfaction */}
+      {/* White flash punch */}
       <div className={`zoom-flash ${phase==="zoomed" ? "flash-on" : ""}`} />
 
       {/* AD overlay */}
@@ -287,11 +300,10 @@ export function Profile() {
 function Skel({ w, h, r, delay=0, style }: { w:number; h:number; r:number; delay?:number; style?: React.CSSProperties }) {
   return (
     <div style={{
-      width: w, height: h, borderRadius: r,
-      background: "linear-gradient(90deg,#e4e6ea 0%,#d8dadf 50%,#e4e6ea 100%)",
-      backgroundSize: "200% 100%",
-      animation: `skel 1.8s ease ${delay}s infinite`,
-      flexShrink: 0,
+      width:w, height:h, borderRadius:r, flexShrink:0,
+      background:"linear-gradient(90deg,#e4e6ea 0%,#d8dadf 50%,#e4e6ea 100%)",
+      backgroundSize:"200% 100%",
+      animation:`skel 1.8s ease ${delay}s infinite`,
       ...style
     }} />
   );

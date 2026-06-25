@@ -152,35 +152,12 @@
   100% { transform: perspective(1400px) rotateX(12deg) rotateY(-18deg) rotateZ(2deg) scale(.88); }
 }
 
-/*
-  FULL ZOOM: phone is now so large the first-post white area
-  covers the entire viewport.
-
-  Math:
-  - Phone frame: 375 × 760 px (display px before scaling)
-  - Status bar:  ~50px
-  - Feed starts at y≈50. After scrolling ~310px:
-    post top  ≈ 168px from phone top (cover 165 + profile 170 + tabs 45 + gap 8 = 388 → minus 310 scroll → 78px + 50 status = 128px ≈ let's call it 140)
-    post center ≈ 140 + 210 = 350px from phone top
-  - Phone centered in viewport → phone center Y = 380px from phone top
-  - Offset from viewport center = 380 - 350 = 30px → translateY(30px) brings post to center
-  - Scale 3.4 makes phone appear 375×3.4=1275px wide (covers any viewport)
-  - White post body (min-height 210px) → appears 714px tall — fills screen height
-*/
-.phone-scene.phase-zoomed {
+/* phase-zoomed: JS rAF sets inline transform — no CSS transition here */
+.phone-scene.phase-zoomed,
+.phone-scene.phase-zoom-js {
   animation: none;
-  transform:
-    perspective(600px)
-    rotateX(0deg)
-    rotateY(0deg)
-    rotateZ(0deg)
-    translateY(30px)
-    scale(3.4);
-  /* Single uninterrupted transition — no intermediate stop */
-  transition: transform 2.0s cubic-bezier(0.22,1,0.36,1), filter 1.6s ease;
-  filter:
-    drop-shadow(0 0 120px rgba(24,119,242,.6))
-    brightness(1.04);
+  transition: filter 1.6s ease;
+  filter: drop-shadow(0 0 120px rgba(24,119,242,.6)) brightness(1.04);
 }
 
 .phone-shadow {

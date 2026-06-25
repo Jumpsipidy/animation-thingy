@@ -1,0 +1,36 @@
+$ pnpm --filter @workspace/mockup-sandbox run dev
+$ vite dev
+failed to load config from C:\Users\jumpsipidy\Desktop\animation-thingy-main\art
+ifacts\mockup-sandbox\vite.config.ts
+error when starting dev server:
+Error: PORT environment variable is required but was not provided.
+    at file:///C:/Users/jumpsipidy/Desktop/animation-thingy-main/artifacts/mocku
+p-sandbox/node_modules/.vite-temp/vite.config.ts.timestamp-1782399720816-593ca06
+552e67.mjs:145:9
+    at ModuleJob.run (node:internal/modules/esm/module_job:437:25)
+    at async node:internal/modules/esm/loader:639:26
+    at async loadConfigFromBundledFile (file:///C:/Users/jumpsipidy/Desktop/anim
+ation-thingy-main/node_modules/.pnpm/vite@7.3.5_@types+node@25.9_9fd212c37a75cb6
+6ba3e15514cba1f93/node_modules/vite/dist/node/chunks/config.js:35996:12)
+    at async bundleAndLoadConfigFile (file:///C:/Users/jumpsipidy/Desktop/animat
+ion-thingy-main/node_modules/.pnpm/vite@7.3.5_@types+node@25.9_9fd212c37a75cb66b
+a3e15514cba1f93/node_modules/vite/dist/node/chunks/config.js:35884:17)
+    at async loadConfigFromFile (file:///C:/Users/jumpsipidy/Desktop/animation-t
+hingy-main/node_modules/.pnpm/vite@7.3.5_@types+node@25.9_9fd212c37a75cb66ba3e15
+514cba1f93/node_modules/vite/dist/node/chunks/config.js:35851:42)
+    at async resolveConfig (file:///C:/Users/jumpsipidy/Desktop/animation-thingy
+-main/node_modules/.pnpm/vite@7.3.5_@types+node@25.9_9fd212c37a75cb66ba3e15514cb
+a1f93/node_modules/vite/dist/node/chunks/config.js:35500:22)
+    at async _createServer (file:///C:/Users/jumpsipidy/Desktop/animation-thingy
+-main/node_modules/.pnpm/vite@7.3.5_@types+node@25.9_9fd212c37a75cb66ba3e15514cb
+a1f93/node_modules/vite/dist/node/chunks/config.js:25441:67)
+    at async CAC.<anonymous> (file:///C:/Users/jumpsipidy/Desktop/animation-thin
+gy-main/node_modules/.pnpm/vite@7.3.5_@types+node@25.9_9fd212c37a75cb66ba3e15514
+cba1f93/node_modules/vite/dist/node/cli.js:572:18)
+C:\Users\jumpsipidy\Desktop\animation-thingy-main\artifacts\mockup-sandbox:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @workspace/mockup-sandbox@2.0.0 dev: `vite d
+ev`
+Exit status 1
+
+jumpsipidy@DESKTOP-84H53AH MINGW64 ~/Desktop/animation-thingy-main
+$

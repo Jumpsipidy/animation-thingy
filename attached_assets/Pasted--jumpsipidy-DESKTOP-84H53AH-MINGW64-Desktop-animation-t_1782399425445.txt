@@ -1,0 +1,156 @@
+
+jumpsipidy@DESKTOP-84H53AH MINGW64 ~/Desktop/animation-thingy-main
+$ rmdir /s /q node_modules
+rmdir: failed to remove '/s': No such file or directory
+rmdir: failed to remove '/q': No such file or directory
+rmdir: failed to remove 'node_modules': Directory not empty
+
+jumpsipidy@DESKTOP-84H53AH MINGW64 ~/Desktop/animation-thingy-main
+$ ^C
+
+jumpsipidy@DESKTOP-84H53AH MINGW64 ~/Desktop/animation-thingy-main
+$ rm -rf node_modules
+b
+b
+b
+
+jumpsipidy@DESKTOP-84H53AH MINGW64 ~/Desktop/animation-thingy-main
+$ b
+bash: b: command not found
+
+jumpsipidy@DESKTOP-84H53AH MINGW64 ~/Desktop/animation-thingy-main
+$ pnpm install --ignore-scripts
+Scope: all 8 workspace projects
+✓ Lockfile passes supply-chain policies (verified 5m ago)
+Lockfile is up to date, resolution step is skipped
+Packages: +465
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 465, reused 465, downloaded 0, added 465, done
+
+devDependencies:
++ prettier 3.8.4
++ typescript 5.9.3
+
+Done in 15.3s using pnpm v11.9.0
+
+jumpsipidy@DESKTOP-84H53AH MINGW64 ~/Desktop/animation-thingy-main
+$ pnpm --filter @workspace/mockup-sandbox run dev
+$ vite dev
+X [ERROR] Cannot start service: Host version "0.27.3" does not match binary vers
+ion "0.28.1"
+
+1 error
+failed to load config from C:\Users\jumpsipidy\Desktop\animation-thingy-main\art
+ifacts\mockup-sandbox\vite.config.ts
+error when starting dev server:
+Error: The service was stopped
+    at C:\Users\jumpsipidy\Desktop\animation-thingy-main\node_modules\.pnpm\esbu
+ild@0.27.3\node_modules\esbuild\lib\main.js:949:34
+    at responseCallbacks.<computed> (C:\Users\jumpsipidy\Desktop\animation-thing
+y-main\node_modules\.pnpm\esbuild@0.27.3\node_modules\esbuild\lib\main.js:603:9)
+    at Socket.afterClose (C:\Users\jumpsipidy\Desktop\animation-thingy-main\node
+_modules\.pnpm\esbuild@0.27.3\node_modules\esbuild\lib\main.js:594:28)
+    at Socket.emit (node:events:521:24)
+    at endReadableNT (node:internal/streams/readable:1729:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:2
+1)
+C:\Users\jumpsipidy\Desktop\animation-thingy-main\artifacts\mockup-sandbox:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @workspace/mockup-sandbox@2.0.0 dev: `vite d
+ev`
+Exit status 1
+
+jumpsipidy@DESKTOP-84H53AH MINGW64 ~/Desktop/animation-thingy-main
+$ ^C
+
+jumpsipidy@DESKTOP-84H53AH MINGW64 ~/Desktop/animation-thingy-main
+$ rm -rf node_modules pnpm-lock.yaml artifacts/mockup-sandbox/node_modules
+
+jumpsipidy@DESKTOP-84H53AH MINGW64 ~/Desktop/animation-thingy-main
+$ pnpm install --ignore-scripts
+Scope: all 8 workspace projects
+artifacts/mockup-sandbox                 | [WARN] deprecated recharts@2.15.4
+Packages: +467
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 473, reused 457, downloaded 10, added 467, done
+
+devDependencies:
++ prettier 3.8.4
++ typescript 5.9.3 (6.0.3 is available)
+
+Done in 16.1s using pnpm v11.9.0
+
+jumpsipidy@DESKTOP-84H53AH MINGW64 ~/Desktop/animation-thingy-main
+$ pnpm --filter @workspace/mockup-sandbox run dev
+$ vite dev
+X [ERROR] Cannot start service: Host version "0.27.3" does not match binary vers
+ion "0.28.1"
+
+1 error
+failed to load config from C:\Users\jumpsipidy\Desktop\animation-thingy-main\art
+ifacts\mockup-sandbox\vite.config.ts
+error when starting dev server:
+Error: The service was stopped
+    at C:\Users\jumpsipidy\Desktop\animation-thingy-main\node_modules\.pnpm\esbu
+ild@0.27.3\node_modules\esbuild\lib\main.js:949:34
+    at responseCallbacks.<computed> (C:\Users\jumpsipidy\Desktop\animation-thing
+y-main\node_modules\.pnpm\esbuild@0.27.3\node_modules\esbuild\lib\main.js:603:9)
+    at Socket.afterClose (C:\Users\jumpsipidy\Desktop\animation-thingy-main\node
+_modules\.pnpm\esbuild@0.27.3\node_modules\esbuild\lib\main.js:594:28)
+    at Socket.emit (node:events:521:24)
+    at endReadableNT (node:internal/streams/readable:1729:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:2
+1)
+C:\Users\jumpsipidy\Desktop\animation-thingy-main\artifacts\mockup-sandbox:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @workspace/mockup-sandbox@2.0.0 dev: `vite d
+ev`
+Exit status 1
+
+jumpsipidy@DESKTOP-84H53AH MINGW64 ~/Desktop/animation-thingy-main
+$ ^C
+
+jumpsipidy@DESKTOP-84H53AH MINGW64 ~/Desktop/animation-thingy-main
+$ npx vite artifacts/mockup-sandbox
+npm warn Unknown project config "auto-install-peers". This will stop working in
+the next major version of npm. See `npm help npmrc` for supported config options
+.
+npm warn Unknown project config "strict-peer-dependencies". This will stop worki
+ng in the next major version of npm. See `npm help npmrc` for supported config o
+ptions.
+npm warn Unknown project config "supportedArchitectures.os". This will stop work
+ing in the next major version of npm. See `npm help npmrc` for supported config
+options.
+npm warn Unknown project config "supportedArchitectures.cpu". This will stop wor
+king in the next major version of npm. See `npm help npmrc` for supported config
+ options.
+Need to install the following packages:
+vite@8.1.0
+Ok to proceed? (y) y
+failed to load config from C:\Users\jumpsipidy\Desktop\animation-thingy-main\art
+ifacts\mockup-sandbox\vite.config.ts
+error when starting dev server:
+Error: Cannot find module '../lightningcss.win32-x64-msvc.node'
+Require stack:
+- C:\Users\jumpsipidy\Desktop\animation-thingy-main\node_modules\.pnpm\lightning
+css@1.32.0\node_modules\lightningcss\node\index.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1476:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1049:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1073:10
+)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1094:12)
+    at Module._load (node:internal/modules/cjs/loader:1262:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.require (node:internal/modules/cjs/loader:1576:12)
+    at require (node:internal/modules/helpers:153:16)
+    at Object.<anonymous> (C:\Users\jumpsipidy\Desktop\animation-thingy-main\nod
+e_modules\.pnpm\lightningcss@1.32.0\node_modules\lightningcss\node\index.js:20:1
+2)
+    at Module._compile (node:internal/modules/cjs/loader:1830:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\jumpsipidy\\Desktop\\animation-thingy-main\\node_modules\\.pnpm\
+\lightningcss@1.32.0\\node_modules\\lightningcss\\node\\index.js'
+  ]
+}
+
+jumpsipidy@DESKTOP-84H53AH MINGW64 ~/Desktop/animation-thingy-main
+$

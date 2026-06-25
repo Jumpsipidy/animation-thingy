@@ -7,76 +7,62 @@ export function Profile() {
   const feedRef = useRef<HTMLDivElement>(null);
   const firstPostRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<Phase>("intro");
-  const [cursor, setCursor] = useState({ x: 185, y: 120, visible: false, clicking: false });
+  const [cursor, setCursor] = useState({ x: 185, y: 100, visible: false, clicking: false });
   const animFrameRef = useRef<number | null>(null);
-  const startTimeRef = useRef<number | null>(null);
 
-  // Ease in-out cubic
   const ease = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
-  // Animate cursor from (x1,y1) to (x2,y2) over `ms` milliseconds
   const animateCursor = (
-    x1: number, y1: number,
-    x2: number, y2: number,
-    ms: number,
-    onDone?: () => void
+    x1: number, y1: number, x2: number, y2: number,
+    ms: number, onDone?: () => void
   ) => {
     const start = performance.now();
     const tick = (now: number) => {
       const t = Math.min((now - start) / ms, 1);
       const e = ease(t);
       setCursor(c => ({ ...c, x: x1 + (x2 - x1) * e, y: y1 + (y2 - y1) * e }));
-      if (t < 1) {
-        animFrameRef.current = requestAnimationFrame(tick);
-      } else {
-        onDone?.();
-      }
+      if (t < 1) animFrameRef.current = requestAnimationFrame(tick);
+      else onDone?.();
     };
     animFrameRef.current = requestAnimationFrame(tick);
   };
 
   useEffect(() => {
-    // Cinematic sequence
-    // 0.6s  → cursor appears near top
-    // 0.8s  → cursor starts scrolling down + feed scrolls
-    // 2.6s  → cursor arrives at first post area
-    // 2.8s  → click ripple fires
-    // 3.2s  → zoom-in begins
-    // 4.8s  → fully zoomed
+    const timers: ReturnType<typeof setTimeout>[] = [];
 
-    const seq: Array<[number, () => void]> = [
-      [600,  () => setCursor(c => ({ ...c, visible: true }))],
-      [900,  () => {
-        setPhase("descending");
-        // start scrolling the feed
-        feedRef.current?.scrollTo({ top: 0, behavior: "instant" });
-        // Animate cursor from top → first post position (phone-local ~y 420)
-        animateCursor(185, 130, 185, 430, 1800, () => {
-          // arrived at post
-          setTimeout(() => {
-            setCursor(c => ({ ...c, clicking: true }));
-            setPhase("clicking");
-            setTimeout(() => {
-              setCursor(c => ({ ...c, clicking: false }));
-              setPhase("zooming");
-              // scroll into post
-              firstPostRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }, 500);
-          }, 120);
+    const q = (delay: number, fn: () => void) => { timers.push(setTimeout(fn, delay)); };
+
+    // 0.5s  → cursor appears
+    q(500,  () => setCursor(c => ({ ...c, visible: true })));
+
+    // 0.8s  → scroll + cursor moves down
+    q(800, () => {
+      setPhase("descending");
+
+      // Scroll feed while cursor descends
+      const scrollStart = performance.now();
+      const scrollFeed = (now: number) => {
+        const t = Math.min((now - scrollStart) / 1900, 1);
+        if (feedRef.current) feedRef.current.scrollTop = ease(t) * 310;
+        if (t < 1) requestAnimationFrame(scrollFeed);
+      };
+      requestAnimationFrame(scrollFeed);
+
+      // Cursor descends from top area to post area
+      animateCursor(185, 120, 185, 445, 1900, () => {
+        // 2.7s: arrived — slight hover pause then click
+        q(160, () => {
+          setCursor(c => ({ ...c, clicking: true }));
+          setPhase("clicking");
         });
-        // Scroll feed gradually in sync
-        let scrollStart = performance.now();
-        const scrollTick = (now: number) => {
-          const t = Math.min((now - scrollStart) / 1800, 1);
-          if (feedRef.current) feedRef.current.scrollTop = ease(t) * 320;
-          if (t < 1) requestAnimationFrame(scrollTick);
-        };
-        requestAnimationFrame(scrollTick);
-      }],
-      [4200, () => setPhase("zoomed")],
-    ];
+        q(480, () => {
+          setCursor(c => ({ ...c, clicking: false }));
+          setPhase("zooming");
+        });
+        q(480 + 900, () => setPhase("zoomed"));
+      });
+    });
 
-    const timers = seq.map(([delay, fn]) => setTimeout(fn, delay));
     return () => {
       timers.forEach(clearTimeout);
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
@@ -85,250 +71,265 @@ export function Profile() {
 
   return (
     <div className="fb-root">
-      {/* Custom animated cursor */}
+      {/* Giant glowing cursor */}
       {cursor.visible && (
         <div
           className={`big-cursor ${cursor.clicking ? "cursor-click" : ""}`}
           style={{ left: cursor.x, top: cursor.y }}
         >
-          {cursor.clicking && <div className="click-ripple" />}
-          {cursor.clicking && <div className="click-ripple delay" />}
+          {cursor.clicking && <div className="ripple r1" />}
+          {cursor.clicking && <div className="ripple r2" />}
+          {cursor.clicking && <div className="ripple r3" />}
         </div>
       )}
 
-      {/* Deep 3D layered background */}
+      {/* ── 3D Background ── */}
       <div className="bg-scene">
         <div className="bg-far-grid" />
         <div className="bg-mid-grid" />
-        <div className="bg-near-vignette" />
-        <div className="bg-orb orb1" />
-        <div className="bg-orb orb2" />
-        <div className="bg-orb orb3" />
-        <div className="bg-orb orb4" />
-        <div className="bg-streak streak1" />
-        <div className="bg-streak streak2" />
-        <div className="bg-streak streak3" />
-        <div className="bg-floor-reflect" />
+        <div className="bg-orb o1" />
+        <div className="bg-orb o2" />
+        <div className="bg-orb o3" />
+        <div className="bg-orb o4" />
+        <div className="bg-streak s1" />
+        <div className="bg-streak s2" />
+        <div className="bg-streak s3" />
+        <div className="bg-vignette" />
+        <div className="bg-floor" />
       </div>
 
-      {/* Phone scene wrapper with 3D tilt */}
+      {/* ── Phone + 3D zoom scene ── */}
       <div className={`phone-scene phase-${phase}`}>
-        {/* Reflection / shadow beneath phone */}
-        <div className="phone-reflection" />
-
+        <div className="phone-shadow" />
         <div className="phone-frame">
-          {/* Notch */}
           <div className="notch" />
 
           {/* Status bar */}
           <div className="status-bar">
-            <span className="status-time">9:41</span>
-            <div className="status-icons">
-              <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="3" width="2" height="7" rx="1"/><rect x="3" y="2" width="2" height="8" rx="1"/><rect x="6" y="0" width="2" height="10" rx="1"/><rect x="9" y="1" width="2" height="9" rx="1"/></svg>
-              <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor" style={{marginLeft:4}}><path d="M7 2.5C9.2 2.5 11.2 3.4 12.6 4.9L14 3.5C12.2 1.6 9.7.5 7 .5S1.8 1.6 0 3.5L1.4 4.9C2.8 3.4 4.8 2.5 7 2.5Z"/><path d="M7 5.5C8.4 5.5 9.7 6.1 10.6 7L12 5.6C10.7 4.3 9 3.5 7 3.5S3.3 4.3 2 5.6L3.4 7C4.3 6.1 5.6 5.5 7 5.5Z"/><circle cx="7" cy="9" r="1.5"/></svg>
-              <span style={{marginLeft:4,fontSize:10}}>🔋</span>
+            <span className="s-time">9:41</span>
+            <div className="s-icons">
+              <SignalIcon /><WifiIcon /><span style={{fontSize:11}}>🔋</span>
             </div>
           </div>
 
-          {/* Scrollable content */}
+          {/* Feed */}
           <div className="feed-scroll" ref={feedRef}>
 
-            {/* Cover photo */}
+            {/* Cover */}
             <div className="cover-photo">
               <div className="cover-shimmer" />
-              <div className="cover-noise" />
               <div className="cover-gradient" />
-              {/* Facebook logo watermark */}
-              <div className="fb-logo-mark">f</div>
             </div>
 
-            {/* Profile section */}
+            {/* Profile */}
             <div className="profile-section">
-              <div className="avatar-outer">
-                <div className="avatar-blank">
-                  <div className="avatar-icon">👤</div>
-                </div>
-                <div className="avatar-online" />
+              <div className="avatar-wrap">
+                <div className="avatar-blank"><span className="avatar-icon">👤</span></div>
+                <div className="avatar-dot" />
               </div>
-              <div className="profile-info">
-                <div className="name-blank" />
-                <div className="subinfo-blank" />
-                <div className="subinfo-blank short" />
+              <div style={{ display:"flex", flexDirection:"column", gap:5, marginTop:10 }}>
+                <Skel w={155} h={20} r={6} />
+                <Skel w={100} h={13} r={4} delay={0.1} />
+                <Skel w={75}  h={13} r={4} delay={0.2} />
               </div>
               <div className="action-row">
-                <button className="btn-primary"><span>＋</span> Add Friend</button>
-                <button className="btn-secondary">Message</button>
-                <button className="btn-more">•••</button>
+                <button className="btn-add">＋ Add Friend</button>
+                <button className="btn-msg">Message</button>
+                <button className="btn-dot">•••</button>
               </div>
-              <div className="friends-strip">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="friend-chip" style={{ left: i * 20 }} />
+              <div className="friends-row">
+                {[...Array(6)].map((_,i) => (
+                  <div key={i} className="friend-pip" style={{ left: i*20 }} />
                 ))}
-                <div className="friends-label">___ mutual friends</div>
+                <span className="friends-text">___ mutual friends</span>
               </div>
             </div>
 
             {/* Tabs */}
             <div className="profile-tabs">
-              {["Posts", "About", "Friends", "Photos", "More"].map((t, i) => (
-                <div key={t} className={`tab-item ${i === 0 ? "tab-active" : ""}`}>{t}</div>
+              {["Posts","About","Friends","Photos","More"].map((t,i) => (
+                <div key={t} className={`tab ${i===0?"tab-on":""}`}>{t}</div>
               ))}
             </div>
 
-            <div className="section-gap" />
+            <div style={{ height:8, background:"#f0f2f5" }} />
 
             {/* ── FIRST POST ── */}
             <div
               ref={firstPostRef}
-              className={`post-card first-post ${phase === "zooming" || phase === "zoomed" ? "post-zooming" : ""} ${phase === "zoomed" ? "post-fully-zoomed" : ""}`}
+              className={`post-card first-post
+                ${phase==="zooming"||phase==="zoomed" ? "post-grow" : ""}
+                ${phase==="zoomed" ? "post-full" : ""}`
+              }
             >
-              {/* Zoom spotlight overlay */}
-              {(phase === "zooming" || phase === "zoomed") && (
-                <div className="zoom-spotlight" />
-              )}
-
-              <div className="post-header">
-                <div className="post-avatar" />
-                <div className="post-meta">
-                  <div className="ph-line w110" />
-                  <div className="ph-line w70 thin" />
+              <div className="post-head">
+                <div className="post-av" />
+                <div style={{ flex:1, display:"flex", flexDirection:"column", gap:5 }}>
+                  <Skel w={110} h={13} r={4} />
+                  <Skel w={70}  h={11} r={3} delay={0.15} />
                 </div>
-                <div className="post-menu">•••</div>
+                <span className="post-menu">•••</span>
               </div>
 
-              {/* Blank white post area */}
+              {/* ── THE WHITE POST AREA ── */}
               <div className="post-body">
-                <div className="post-blank-area">
-                  <div className="blank-label">Your content here</div>
-                </div>
+                <div className="blank-label">Your content here</div>
               </div>
 
               <div className="post-stats">
-                <div className="stat-reactions">
-                  <span className="ricon">👍</span>
-                  <span className="ricon">❤️</span>
-                  <span className="ricon">😮</span>
-                  <div className="ph-line w50 thin" style={{marginLeft:4}} />
+                <div style={{ display:"flex", alignItems:"center", gap:3 }}>
+                  {"👍❤️😮".split("").map((e,i) => <span key={i} style={{fontSize:14}}>{e}</span>)}
+                  <Skel w={50} h={11} r={3} style={{ marginLeft:4 }} />
                 </div>
-                <div className="stat-right">
-                  <div className="ph-line w55 thin" />
-                  <div className="ph-line w45 thin" />
+                <div style={{ display:"flex", gap:10 }}>
+                  <Skel w={55} h={11} r={3} />
+                  <Skel w={45} h={11} r={3} delay={0.1} />
                 </div>
               </div>
 
               <div className="post-actions">
-                {[["👍","Like"],["💬","Comment"],["↗","Share"]].map(([icon, label]) => (
-                  <div key={label} className="post-action-btn">{icon} {label}</div>
+                {[["👍","Like"],["💬","Comment"],["↗","Share"]].map(([ic,lb]) => (
+                  <div key={lb} className="action-btn">{ic} {lb}</div>
                 ))}
               </div>
 
-              <div className="comment-section">
+              <div className="comment-sec">
                 <CommentRow wide />
                 <CommentRow />
-                <div className="comment-input-row">
-                  <div className="self-avatar" />
-                  <div className="comment-input">Write a comment…</div>
+                <div className="cinput-row">
+                  <div className="self-av" />
+                  <div className="cinput">Write a comment…</div>
                 </div>
               </div>
             </div>
 
-            {/* ── SECOND POST ── */}
+            {/* Second post */}
             <div className="post-card">
-              <div className="post-header">
-                <div className="post-avatar" />
-                <div className="post-meta">
-                  <div className="ph-line w110" />
-                  <div className="ph-line w70 thin" />
+              <div className="post-head">
+                <div className="post-av" />
+                <div style={{ flex:1, display:"flex", flexDirection:"column", gap:5 }}>
+                  <Skel w={110} h={13} r={4} />
+                  <Skel w={70}  h={11} r={3} />
                 </div>
-                <div className="post-menu">•••</div>
+                <span className="post-menu">•••</span>
               </div>
-              <div className="post-body">
-                <div className="post-blank-area tall">
-                  <div className="blank-label">Your content here</div>
-                </div>
+              <div className="post-body tall">
+                <div className="blank-label">Your content here</div>
               </div>
               <div className="post-actions">
-                {[["👍","Like"],["💬","Comment"],["↗","Share"]].map(([icon, label]) => (
-                  <div key={label} className="post-action-btn">{icon} {label}</div>
+                {[["👍","Like"],["💬","Comment"],["↗","Share"]].map(([ic,lb]) => (
+                  <div key={lb} className="action-btn">{ic} {lb}</div>
                 ))}
               </div>
-              <div className="comment-section">
+              <div className="comment-sec">
                 <CommentRow />
-                <div className="comment-input-row">
-                  <div className="self-avatar" />
-                  <div className="comment-input">Write a comment…</div>
+                <div className="cinput-row">
+                  <div className="self-av" />
+                  <div className="cinput">Write a comment…</div>
                 </div>
               </div>
             </div>
 
-            {/* ── THIRD POST ── */}
+            {/* Third post */}
             <div className="post-card">
-              <div className="post-header">
-                <div className="post-avatar" />
-                <div className="post-meta">
-                  <div className="ph-line w110" />
-                  <div className="ph-line w70 thin" />
+              <div className="post-head">
+                <div className="post-av" />
+                <div style={{ flex:1, display:"flex", flexDirection:"column", gap:5 }}>
+                  <Skel w={110} h={13} r={4} />
+                  <Skel w={70}  h={11} r={3} />
                 </div>
-                <div className="post-menu">•••</div>
+                <span className="post-menu">•••</span>
               </div>
               <div className="post-body">
-                <div className="post-blank-area">
-                  <div className="blank-label">Your content here</div>
-                </div>
+                <div className="blank-label">Your content here</div>
               </div>
               <div className="post-actions">
-                {[["👍","Like"],["💬","Comment"],["↗","Share"]].map(([icon, label]) => (
-                  <div key={label} className="post-action-btn">{icon} {label}</div>
+                {[["👍","Like"],["💬","Comment"],["↗","Share"]].map(([ic,lb]) => (
+                  <div key={lb} className="action-btn">{ic} {lb}</div>
                 ))}
               </div>
-              <div className="comment-section">
-                <div className="comment-input-row">
-                  <div className="self-avatar" />
-                  <div className="comment-input">Write a comment…</div>
+              <div className="comment-sec">
+                <div className="cinput-row">
+                  <div className="self-av" />
+                  <div className="cinput">Write a comment…</div>
                 </div>
               </div>
             </div>
 
-            <div style={{ height: 80 }} />
+            <div style={{ height:80 }} />
           </div>
 
           {/* Bottom nav */}
           <div className="bottom-nav">
-            {["🏠","🔍","▶","🛒","☰"].map((icon, i) => (
-              <div key={i} className={`nav-btn ${i === 0 ? "nav-btn-active" : ""}`}>{icon}</div>
+            {["🏠","🔍","▶","🛒","☰"].map((ic,i) => (
+              <div key={i} className={`nav-btn ${i===0?"nb-on":""}`}>{ic}</div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Commercial AD overlay — fades out */}
-      <div className={`ad-overlay ${phase !== "intro" ? "ad-exit" : ""}`}>
-        <div className="ad-top-badge">
-          <span className="ad-pill">● LIVE</span>
-          <span className="ad-tag">SPONSORED</span>
+      {/* White flash on zoom — pure satisfaction */}
+      <div className={`zoom-flash ${phase==="zoomed" ? "flash-on" : ""}`} />
+
+      {/* AD overlay */}
+      <div className={`ad-overlay ${phase!=="intro" ? "ad-out" : ""}`}>
+        <div className="ad-top">
+          <span className="live-pill">● LIVE</span>
+          <span className="sponsored-tag">SPONSORED</span>
         </div>
-        <div className="ad-center">
+        <div className="ad-mid">
           <div className="ad-brand">YOUR BRAND</div>
           <div className="ad-headline">Your Story,<br />Everywhere.</div>
           <div className="ad-sub">Watch it unfold ↓</div>
         </div>
-        <div className="ad-bottom-bar">
-          <div className="ad-cta-btn">Learn More →</div>
-        </div>
+        <div className="ad-cta-btn">Learn More →</div>
       </div>
     </div>
   );
 }
 
+function Skel({ w, h, r, delay=0, style }: { w:number; h:number; r:number; delay?:number; style?: React.CSSProperties }) {
+  return (
+    <div style={{
+      width: w, height: h, borderRadius: r,
+      background: "linear-gradient(90deg,#e4e6ea 0%,#d8dadf 50%,#e4e6ea 100%)",
+      backgroundSize: "200% 100%",
+      animation: `skel 1.8s ease ${delay}s infinite`,
+      flexShrink: 0,
+      ...style
+    }} />
+  );
+}
+
 function CommentRow({ wide }: { wide?: boolean }) {
   return (
-    <div className="comment-row">
-      <div className="comment-avatar" />
-      <div className="comment-bubble">
-        <div className="ph-line w80 bold-ph" />
-        <div className="ph-line" style={{ width: wide ? "100%" : "65%" }} />
-        {wide && <div className="ph-line w70" />}
+    <div className="cmt-row">
+      <div className="cmt-av" />
+      <div className="cmt-bubble">
+        <Skel w={70}  h={11} r={3} />
+        <Skel w={wide ? 160 : 100} h={11} r={3} delay={0.1} />
+        {wide && <Skel w={80} h={11} r={3} delay={0.2} />}
       </div>
     </div>
+  );
+}
+
+function SignalIcon() {
+  return (
+    <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor" style={{marginRight:3}}>
+      <rect x="0" y="4" width="2" height="6" rx="0.5"/>
+      <rect x="3" y="2.5" width="2" height="7.5" rx="0.5"/>
+      <rect x="6" y="1" width="2" height="9" rx="0.5"/>
+      <rect x="9" y="0" width="2" height="10" rx="0.5"/>
+    </svg>
+  );
+}
+function WifiIcon() {
+  return (
+    <svg width="14" height="10" viewBox="0 0 16 12" fill="currentColor" style={{marginRight:3}}>
+      <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"/>
+      <path d="M3.5 6.5a6.5 6.5 0 0 1 9 0L11 8a4.5 4.5 0 0 0-6 0L3.5 6.5Z"/>
+      <path d="M0 3.5A11 11 0 0 1 16 3.5l-1.5 1.5A9 9 0 0 0 1.5 5L0 3.5Z"/>
+    </svg>
   );
 }

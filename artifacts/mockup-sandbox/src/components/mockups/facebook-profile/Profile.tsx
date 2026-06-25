@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./_group.css";
 
-type Phase = "intro" | "descending" | "clicking" | "zooming" | "zoomed";
+type Phase = "intro" | "descending" | "clicking" | "zoomed";
 
 export function Profile() {
   const feedRef = useRef<HTMLDivElement>(null);
@@ -57,9 +57,8 @@ export function Profile() {
         });
         q(480, () => {
           setCursor(c => ({ ...c, clicking: false }));
-          setPhase("zooming");
+          setPhase("zoomed");
         });
-        q(480 + 900, () => setPhase("zoomed"));
       });
     });
 
@@ -157,10 +156,7 @@ export function Profile() {
             {/* ── FIRST POST ── */}
             <div
               ref={firstPostRef}
-              className={`post-card first-post
-                ${phase==="zooming"||phase==="zoomed" ? "post-grow" : ""}
-                ${phase==="zoomed" ? "post-full" : ""}`
-              }
+              className={`post-card first-post ${phase==="zoomed" ? "post-full" : ""}`}
             >
               <div className="post-head">
                 <div className="post-av" />
